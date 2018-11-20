@@ -40,13 +40,15 @@ for p in $NAMESERVERS $PROVIDERS; do
     pip=${p%%#*}
     pname=${p##*#}
     ftime=0
+    timeouts=0
 
     printf "%-18s" "$pname"
     for d in $DOMAINS2TEST; do
         ttime=`$dig +tries=1 +time=2 +stats @$pip $d |grep "Query time:" | cut -d : -f 2- | cut -d " " -f 2`
         if [ -z "$ttime" ]; then
-	        #let's have time out be 1s = 1000ms
-	        ttime=1000
+	        # Timeout
+	        ttime="  "
+            timeouts=$((timeouts + 1))
         elif [ "x$ttime" = "x0" ]; then
 	        ttime=1
 	    fi
@@ -54,7 +56,7 @@ for p in $NAMESERVERS $PROVIDERS; do
         printf "%-8s" "$ttime ms"
         ftime=$((ftime + ttime))
     done
-    avg=`bc -lq <<< "scale=2; $ftime/$totaldomains"`
+    avg=`bc -lq <<< "scale=2; $((ftime - (0*timeouts)))/$((totaldomains - timeouts))"`
 
     echo "  $avg"
 done
